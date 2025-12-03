@@ -77,18 +77,33 @@ const FitToAspectContainer = ({ ratio, children, className }: PropsWithChildren<
   const [dims, setDims] = useState({ w: 0, h: 0 });
 
   useLayoutEffect(() => {
-     if (!containerRef.current) return;
+     // Safety Check: Capture the element to a variable
+     const element = containerRef.current;
+     if (!element) return;
+
      const update = () => {
-        if (!containerRef.current) return;
-        const { width: cw, height: ch } = containerRef.current.getBoundingClientRect();
+        // Double check element exists in closure
+        if (!element) return;
+        const { width: cw, height: ch } = element.getBoundingClientRect();
         if (cw === 0 || ch === 0) return;
-        let w = cw; let h = w / ratio;
-        if (h > ch) { h = ch; w = h * ratio; }
+        
+        let w = cw; 
+        let h = w / ratio;
+        
+        if (h > ch) { 
+           h = ch; 
+           w = h * ratio; 
+        }
         setDims({ w, h });
      };
+
      const ro = new ResizeObserver(update);
-     ro.observe(containerRef.current);
+     // Observe the captured element
+     ro.observe(element);
+     
+     // Initial calculation
      update();
+     
      return () => ro.disconnect();
   }, [ratio]);
 
@@ -222,7 +237,7 @@ const Navbar = ({ onOpenKeys, customLogo, onUploadLogo, lang, onLangChange }: Na
         <div className="h-8 w-px bg-architect-700/50"></div>
         <div className="flex flex-col justify-center -space-y-0.5">
            <span className="font-futura text-lg tracking-tight text-architect-200">
-             <span className="font-light">Archi</span><span className="font-bold text-[#A61D40]">Gem</span>
+             <span className="font-light">Archi</span><span className="font-bold" style={{ color: '#A61D40' }}>Gem</span>
            </span>
            <span className="text-[9px] text-architect-500 font-futura tracking-[0.2em] uppercase">Studio</span>
         </div>
