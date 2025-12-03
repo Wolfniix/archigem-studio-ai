@@ -1,9 +1,31 @@
-
-
 import { GoogleGenAI } from "@google/genai";
 import { ToolDefinition, ToolId, CanvasConfig, AspectRatio, Resolution, Annotation, CropRect } from "../types";
 
+// Helper to safely get the API Key from various sources
+const getApiKey = (): string | undefined => {
+  // 1. Check Vite Environment Variable (Priority)
+  const viteEnv = (import.meta as any).env;
+  if (viteEnv && viteEnv.VITE_GEMINI_API_KEY) {
+    return viteEnv.VITE_GEMINI_API_KEY;
+  }
+  
+  // 2. Fallback to process.env (for AI Studio / IDX injection)
+  // Safely check if process exists to avoid crashes in pure browser environments
+  try {
+    if (typeof process !== 'undefined' && process.env && process.env.API_KEY) {
+      return process.env.API_KEY;
+    }
+  } catch (e) {
+    // Ignore error if process is not defined
+  }
+
+  return undefined;
+};
+
 export const checkApiKey = async (): Promise<boolean> => {
+  // If we have a static Env key, we are ready.
+  if (getApiKey()) return true;
+
   const w = window as any;
   if (!w.aistudio) return false;
   try {
@@ -15,6 +37,9 @@ export const checkApiKey = async (): Promise<boolean> => {
 };
 
 export const promptApiKeySelection = async (): Promise<void> => {
+  // If we have a static Env key, do not prompt the user.
+  if (getApiKey()) return;
+
   const w = window as any;
   if (w.aistudio) {
     await w.aistudio.openSelectKey();
@@ -133,7 +158,10 @@ const mapAspectRatio = (ratio: AspectRatio, inputWidth?: number, inputHeight?: n
 };
 
 export const estimateCameraPose = async (imageFile: File): Promise<{ yaw: number; pitch: number }> => {
-  const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
+  const apiKey = getApiKey();
+  if (!apiKey) throw new Error("API Key not found.");
+
+  const ai = new GoogleGenAI({ apiKey: apiKey });
   const imagePart = await fileToGenerativePart(imageFile);
   
   const prompt = `
@@ -190,7 +218,10 @@ export const generateArchitectureOutput = async (
   cropRect?: CropRect // Add crop rect argument
 ): Promise<{ text?: string; imageUrl?: string; annotations?: Annotation[] }> => {
   
-  const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
+  const apiKey = getApiKey();
+  if (!apiKey) throw new Error("API Key not found. Please connect your key or check configuration.");
+
+  const ai = new GoogleGenAI({ apiKey: apiKey });
   
   // Prepare contents array
   // IF cropRect exists, we crop the image client-side first
