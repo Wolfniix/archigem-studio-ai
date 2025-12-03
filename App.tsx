@@ -77,34 +77,46 @@ const FitToAspectContainer = ({ ratio, children, className }: PropsWithChildren<
   const [dims, setDims] = useState({ w: 0, h: 0 });
 
   useLayoutEffect(() => {
-     // Safety Check: Capture the element to a variable
+     // Safety Check: Capture the element to a variable to ensure closure safety
      const element = containerRef.current;
      if (!element) return;
 
      const update = () => {
-        // Double check element exists in closure
+        // Double check element exists in closure and DOM
         if (!element) return;
-        const { width: cw, height: ch } = element.getBoundingClientRect();
-        if (cw === 0 || ch === 0) return;
         
-        let w = cw; 
-        let h = w / ratio;
-        
-        if (h > ch) { 
-           h = ch; 
-           w = h * ratio; 
+        try {
+            const { width: cw, height: ch } = element.getBoundingClientRect();
+            if (cw === 0 || ch === 0) return;
+            
+            let w = cw; 
+            let h = w / ratio;
+            
+            if (h > ch) { 
+               h = ch; 
+               w = h * ratio; 
+            }
+            setDims({ w, h });
+        } catch (e) {
+            // Silently fail if element is disconnected
         }
-        setDims({ w, h });
      };
 
-     const ro = new ResizeObserver(update);
-     // Observe the captured element
-     ro.observe(element);
+     // Wrap in try-catch for browser compatibility
+     let ro: ResizeObserver | null = null;
+     try {
+        ro = new ResizeObserver(update);
+        ro.observe(element);
+     } catch (e) {
+         console.warn("ResizeObserver error", e);
+     }
      
      // Initial calculation
      update();
      
-     return () => ro.disconnect();
+     return () => {
+         if (ro) ro.disconnect();
+     };
   }, [ratio]);
 
   return (

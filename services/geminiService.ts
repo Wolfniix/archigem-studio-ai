@@ -3,10 +3,14 @@ import { ToolDefinition, ToolId, CanvasConfig, AspectRatio, Resolution, Annotati
 
 // Helper to safely get the API Key from various sources
 const getApiKey = (): string | undefined => {
-  // 1. Check Vite Environment Variable (Priority)
-  const viteEnv = (import.meta as any).env;
-  if (viteEnv && viteEnv.VITE_GEMINI_API_KEY) {
-    return viteEnv.VITE_GEMINI_API_KEY;
+  try {
+    // 1. Check Vite Environment Variable (Priority)
+    // Defensive check for import.meta and import.meta.env
+    if (import.meta && (import.meta as any).env && (import.meta as any).env.VITE_GEMINI_API_KEY) {
+      return (import.meta as any).env.VITE_GEMINI_API_KEY;
+    }
+  } catch (e) {
+    // Ignore access errors
   }
   
   // 2. Fallback to process.env (for AI Studio / IDX injection)
