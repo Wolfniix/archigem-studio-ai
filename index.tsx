@@ -34,23 +34,43 @@ class ErrorBoundary extends React.Component<{ children: React.ReactNode }, { has
   }
 }
 
+const mount = (rootElement: HTMLElement) => {
+  try {
+    const root = ReactDOM.createRoot(rootElement);
+    root.render(
+      <React.StrictMode>
+        <ErrorBoundary>
+          <App />
+        </ErrorBoundary>
+      </React.StrictMode>
+    );
+  } catch (e) {
+    console.error("Failed to mount React app:", e);
+  }
+};
+
 const startApp = () => {
   const rootElement = document.getElementById('root');
   
-  // Safety Check: Ensure root element exists before creating root
-  if (!rootElement) {
-    console.error("CRITICAL ERROR: Could not find root element with id 'root' to mount React application.");
-    return;
+  if (rootElement) {
+    mount(rootElement);
+  } else {
+    // Retry mechanism for environments where DOM might lag slightly (e.g. Vercel optimized builds)
+    console.warn("Root element not found immediately. Retrying...");
+    let retries = 0;
+    const interval = setInterval(() => {
+      const el = document.getElementById('root');
+      if (el) {
+        clearInterval(interval);
+        mount(el);
+      }
+      retries++;
+      if (retries > 50) { // Timeout after 5 seconds
+        clearInterval(interval);
+        console.error("CRITICAL ERROR: Root element 'root' never appeared in the DOM.");
+      }
+    }, 100);
   }
-
-  const root = ReactDOM.createRoot(rootElement);
-  root.render(
-    <React.StrictMode>
-      <ErrorBoundary>
-        <App />
-      </ErrorBoundary>
-    </React.StrictMode>
-  );
 };
 
 // Ensure DOM is fully loaded before trying to access 'root'

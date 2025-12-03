@@ -79,10 +79,12 @@ const FitToAspectContainer = ({ ratio, children, className }: PropsWithChildren<
   useLayoutEffect(() => {
      // Safety Check: Capture the element to a variable to ensure closure safety
      const element = containerRef.current;
-     if (!element) return;
+     
+     // STRICT CHECK: Ensure element is valid DOM Node before observing
+     if (!element || !(element instanceof Element)) return;
 
      const update = () => {
-        // Double check element exists in closure and DOM
+        // Double check element exists in closure
         if (!element) return;
         
         try {
@@ -105,17 +107,32 @@ const FitToAspectContainer = ({ ratio, children, className }: PropsWithChildren<
      // Wrap in try-catch for browser compatibility
      let ro: ResizeObserver | null = null;
      try {
-        ro = new ResizeObserver(update);
-        ro.observe(element);
+        if (typeof ResizeObserver !== 'undefined') {
+            ro = new ResizeObserver((entries) => {
+                // Throttle updates via RAF to avoid "Loop limit exceeded"
+                window.requestAnimationFrame(() => {
+                    if (!Array.isArray(entries) || !entries.length) return;
+                    update();
+                });
+            });
+            ro.observe(element);
+        } else {
+            // Fallback for very old browsers
+            window.addEventListener('resize', update);
+        }
      } catch (e) {
-         console.warn("ResizeObserver error", e);
+         console.warn("ResizeObserver initialization error", e);
      }
      
      // Initial calculation
      update();
      
      return () => {
-         if (ro) ro.disconnect();
+         if (ro) {
+             ro.disconnect();
+         } else {
+             window.removeEventListener('resize', update);
+         }
      };
   }, [ratio]);
 
