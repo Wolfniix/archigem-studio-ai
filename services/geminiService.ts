@@ -4,23 +4,30 @@ import { ToolDefinition, ToolId, CanvasConfig, AspectRatio, Resolution, Annotati
 // Helper to safely get the API Key from various sources
 const getApiKey = (): string | undefined => {
   try {
+    const local = localStorage.getItem("gemini_api_key");
+    if (local && local !== "your-api-key-here") return local;
+  } catch (e) {}
+
+  try {
     // 1. Check Vite Environment Variable (Priority)
     // Defensive check for import.meta and import.meta.env
     if (import.meta && (import.meta as any).env && (import.meta as any).env.VITE_GEMINI_API_KEY) {
-      return (import.meta as any).env.VITE_GEMINI_API_KEY;
+      const val = (import.meta as any).env.VITE_GEMINI_API_KEY;
+      if (val && val !== "your-api-key-here") return val;
     }
   } catch (e) {
     // Ignore access errors
   }
   
-  // 2. Fallback to process.env (for AI Studio / IDX injection)
-  // Safely check if process exists to avoid crashes in pure browser environments
+  // 2. Fallback to process.env (for AI Studio / IDX injection or Vite define)
   try {
-    if (typeof process !== 'undefined' && process.env && process.env.API_KEY) {
-      return process.env.API_KEY;
+    // We access process.env.API_KEY directly because Vite statically replaces it
+    const injectedKey = process.env.API_KEY || process.env.GEMINI_API_KEY;
+    if (injectedKey && injectedKey !== "your-api-key-here") {
+      return injectedKey;
     }
   } catch (e) {
-    // Ignore error if process is not defined
+    // Ignore error if process is not defined and Vite didn't replace it
   }
 
   return undefined;
@@ -41,12 +48,35 @@ export const checkApiKey = async (): Promise<boolean> => {
 };
 
 export const promptApiKeySelection = async (): Promise<void> => {
-  // If we have a static Env key, do not prompt the user.
-  if (getApiKey()) return;
+  let hasEnvKey = false;
+  try {
+    if (import.meta && (import.meta as any).env && (import.meta as any).env.VITE_GEMINI_API_KEY) {
+       const val = (import.meta as any).env.VITE_GEMINI_API_KEY;
+       if (val && val !== "your-api-key-here") hasEnvKey = true;
+    }
+    const procEnv = process.env.API_KEY || process.env.GEMINI_API_KEY;
+    if (procEnv && procEnv !== "your-api-key-here") hasEnvKey = true;
+  } catch(e) {}
 
   const w = window as any;
   if (w.aistudio) {
+    if (hasEnvKey) return;
     await w.aistudio.openSelectKey();
+    return;
+  }
+
+  if (hasEnvKey) {
+     alert("API Key is currently managed securely by your environment files (.env). Edit your .env file and restart the server to change it.");
+     return;
+  }
+
+  const key = prompt("Please enter your Gemini API Key:", localStorage.getItem("gemini_api_key") || "");
+  if (key !== null) {
+    if (key.trim() === "") {
+        localStorage.removeItem("gemini_api_key");
+    } else {
+        localStorage.setItem("gemini_api_key", key.trim());
+    }
   }
 };
 
