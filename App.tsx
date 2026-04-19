@@ -608,7 +608,7 @@ export default function App() {
         <div className="flex-1 flex flex-col bg-[#121416] relative min-w-0">
           <div className="absolute inset-0 opacity-[0.03] pointer-events-none" style={{backgroundImage: 'radial-gradient(#ffffff 1px, transparent 1px)', backgroundSize: '24px 24px'}}></div>
           <div className="flex-1 flex flex-col md:flex-row min-h-0">
-             <div className="flex-1 p-6 flex flex-col border-b md:border-b-0 md:border-r border-architect-800/50 min-h-0 gap-4">
+             <div className="flex-1 min-w-0 p-6 flex flex-col border-b md:border-b-0 md:border-r border-architect-800/50 min-h-0 gap-4">
                 <div className="flex-[2] flex flex-col min-h-0">
                   <div className="flex-none flex items-center justify-between mb-3"><h3 className="text-[10px] font-bold text-architect-400 uppercase tracking-widest flex items-center gap-2"><span className="w-1.5 h-1.5 rounded-full bg-architect-600"></span> {t.inputSource}</h3></div>
                   <div className="flex-1 bg-architect-900/20 border border-architect-800 rounded-xl overflow-hidden relative shadow-inner min-h-0">
@@ -638,7 +638,7 @@ export default function App() {
                   </div>
                 </div>
              </div>
-             <div className="flex-1 p-6 flex flex-col min-h-0">
+             <div className="flex-1 min-w-0 p-6 flex flex-col min-h-0">
                 <div className="flex-none flex items-center justify-between mb-3">
                    <div className="flex items-center gap-4">
                      <h3 className="text-[10px] font-bold text-architect-400 uppercase tracking-widest flex items-center gap-2"><span className={clsx("w-1.5 h-1.5 rounded-full", generationState.resultUrl || generationState.resultText ? "bg-green-500 shadow-[0_0_8px_rgba(34,197,94,0.6)]" : "bg-architect-600")}></span> {t.result}</h3>
